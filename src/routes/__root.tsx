@@ -85,13 +85,17 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
           "Hamburguesas, milanesas, lomitos, pique macho y más. Haz tu pedido en el local, para llevar o delivery. Plaza D'cio, Bolivia.",
       },
       { name: "author", content: "Plaza D'cio" },
-      { property: "og:title", content: "Plaza D'cio — Comida Rápida" },
+      { property: "og:title", content: "Plaza D'cio — Comida Rápida | Pedidos online" },
       {
         property: "og:description",
-        content: "Pedí online: en el local, para llevar o delivery. Lo mejor de la casa.",
+        content: "Hamburguesas, milanesas, lomitos, pique macho y más. Haz tu pedido en el local, para llevar o delivery. Plaza D'cio, Bolivia.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:title", content: "Plaza D'cio — Comida Rápida | Pedidos online" },
+      { name: "twitter:description", content: "Hamburguesas, milanesas, lomitos, pique macho y más. Haz tu pedido en el local, para llevar o delivery. Plaza D'cio, Bolivia." },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/fd31a563-ebdb-4084-9fae-03651df62966/id-preview-d45d27e0--9eb78a43-2f39-4a10-be07-0d57fd7b6328.lovable.app-1783658984567.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/fd31a563-ebdb-4084-9fae-03651df62966/id-preview-d45d27e0--9eb78a43-2f39-4a10-be07-0d57fd7b6328.lovable.app-1783658984567.png" },
     ],
     links: [
       {
