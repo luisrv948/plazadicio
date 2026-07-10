@@ -136,3 +136,8 @@
 @utility bg-brand-gradient {
   background: var(--gradient-lime);
 }
+
+@utility no-scrollbar {
+  scrollbar-width: none;
+  &::-webkit-scrollbar { display: none; }
+}
