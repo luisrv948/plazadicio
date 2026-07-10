@@ -1,0 +1,1 @@
+export const money = (n: number | string) => `${Number(n).toFixed(0)} Bs.`;
