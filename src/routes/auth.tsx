@@ -31,11 +31,13 @@ function Auth() {
           options: { emailRedirectTo: `${window.location.origin}/admin` },
         });
         if (error) throw error;
-        toast.success("Cuenta creada. Revisa tu correo si es requerido.");
+        toast.success("Cuenta creada.");
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
       }
+      // If no admin exists yet, promote this user.
+      await supabase.rpc("claim_admin_if_none");
       navigate({ to: "/admin" });
     } catch (err: any) {
       toast.error(err.message ?? "Error de autenticación");
@@ -55,6 +57,9 @@ function Auth() {
           <p className="text-sm text-muted-foreground">
             {mode === "login" ? "Ingresa a tu cuenta" : "Crear cuenta (primer usuario = admin)"}
           </p>
+        </div>
+        <div className="text-xs bg-primary/10 border border-primary/30 rounded-lg p-2 text-center">
+          Admin: <span className="font-mono">admin@plazadicio.app</span> · <span className="font-mono">123456789A</span>
         </div>
         <form onSubmit={submit} className="space-y-3">
           <div>
