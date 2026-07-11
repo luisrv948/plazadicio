@@ -74,18 +74,88 @@ function AdminPage() {
 
       <main className="max-w-6xl mx-auto px-4 py-6">
         <Tabs defaultValue="orders" className="space-y-4">
-          <TabsList className="w-full grid grid-cols-4">
+          <TabsList className="w-full grid grid-cols-5">
             <TabsTrigger value="orders">Pedidos</TabsTrigger>
             <TabsTrigger value="products">Productos</TabsTrigger>
             <TabsTrigger value="categories">Categorías</TabsTrigger>
             <TabsTrigger value="settings">Ajustes</TabsTrigger>
+            <TabsTrigger value="account">Cuenta</TabsTrigger>
           </TabsList>
           <TabsContent value="orders"><OrdersTab /></TabsContent>
           <TabsContent value="products"><ProductsTab /></TabsContent>
           <TabsContent value="categories"><CategoriesTab /></TabsContent>
           <TabsContent value="settings"><SettingsTab /></TabsContent>
+          <TabsContent value="account"><AccountTab email={email} /></TabsContent>
         </Tabs>
       </main>
+    </div>
+  );
+}
+
+/* ---------------- Account ---------------- */
+function AccountTab({ email }: { email?: string }) {
+  const [newEmail, setNewEmail] = useState(email ?? "");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [savingEmail, setSavingEmail] = useState(false);
+  const [savingPass, setSavingPass] = useState(false);
+
+  useEffect(() => { if (email) setNewEmail(email); }, [email]);
+
+  async function updateEmail() {
+    if (!newEmail.trim() || newEmail === email) return;
+    setSavingEmail(true);
+    try {
+      const { error } = await supabase.auth.updateUser({ email: newEmail.trim() });
+      if (error) throw error;
+      toast.success("Correo actualizado. Verifica tu bandeja si es necesario.");
+    } catch (e: any) { toast.error(e.message); }
+    finally { setSavingEmail(false); }
+  }
+
+  async function updatePassword() {
+    if (newPassword.length < 8) { toast.error("Mínimo 8 caracteres"); return; }
+    if (newPassword !== confirmPassword) { toast.error("Las contraseñas no coinciden"); return; }
+    setSavingPass(true);
+    try {
+      const { error } = await supabase.auth.updateUser({ password: newPassword });
+      if (error) throw error;
+      toast.success("Contraseña actualizada");
+      setNewPassword(""); setConfirmPassword("");
+    } catch (e: any) { toast.error(e.message); }
+    finally { setSavingPass(false); }
+  }
+
+  return (
+    <div className="space-y-4 max-w-xl">
+      <div className="bg-card border border-border rounded-xl p-4 space-y-3">
+        <h3 className="font-bold">Cambiar correo</h3>
+        <div>
+          <Label>Correo</Label>
+          <Input type="email" value={newEmail} onChange={(e) => setNewEmail(e.target.value)} />
+        </div>
+        <Button onClick={updateEmail} disabled={savingEmail || !newEmail.trim() || newEmail === email}>
+          {savingEmail && <Loader2 className="w-4 h-4 animate-spin" />}
+          Actualizar correo
+        </Button>
+      </div>
+
+      <div className="bg-card border border-border rounded-xl p-4 space-y-3">
+        <h3 className="font-bold">Cambiar contraseña</h3>
+        <div>
+          <Label>Nueva contraseña</Label>
+          <Input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} minLength={8} />
+        </div>
+        <div>
+          <Label>Confirmar contraseña</Label>
+          <Input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} minLength={8} />
+        </div>
+        <Button onClick={updatePassword} disabled={savingPass || !newPassword}>
+          {savingPass && <Loader2 className="w-4 h-4 animate-spin" />}
+          Actualizar contraseña
+        </Button>
+        <p className="text-xs text-muted-foreground">Mínimo 8 caracteres.</p>
+      </div>
     </div>
   );
 }
