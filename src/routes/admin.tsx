@@ -532,3 +532,182 @@ function SettingsTab() {
     </div>
   );
 }
+
+/* ---------------- Users ---------------- */
+function UsersTab() {
+  const qc = useQueryClient();
+  const listFn = useServerFn(listUsers);
+  const createFn = useServerFn(createUser);
+  const updateFn = useServerFn(updateUserCredentials);
+  const roleFn = useServerFn(setUserRole);
+  const delFn = useServerFn(deleteUser);
+
+  const usersQ = useQuery({
+    queryKey: ["admin-users"],
+    queryFn: () => listFn(),
+  });
+
+  const invalidate = () => qc.invalidateQueries({ queryKey: ["admin-users"] });
+
+  const [createOpen, setCreateOpen] = useState(false);
+  const [nEmail, setNEmail] = useState("");
+  const [nPass, setNPass] = useState("");
+  const [nRole, setNRole] = useState<"admin" | "user">("user");
+  const [creating, setCreating] = useState(false);
+
+  const [editUser, setEditUser] = useState<{ id: string; email: string } | null>(null);
+  const [eEmail, setEEmail] = useState("");
+  const [ePass, setEPass] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  async function handleCreate() {
+    if (!nEmail.trim() || nPass.length < 8) { toast.error("Correo válido y contraseña mínima 8"); return; }
+    setCreating(true);
+    try {
+      await createFn({ data: { email: nEmail.trim(), password: nPass, role: nRole } });
+      toast.success("Usuario creado");
+      setCreateOpen(false); setNEmail(""); setNPass(""); setNRole("user");
+      invalidate();
+    } catch (e: any) { toast.error(e.message); }
+    finally { setCreating(false); }
+  }
+
+  async function handleSaveEdit() {
+    if (!editUser) return;
+    setSaving(true);
+    try {
+      await updateFn({ data: { userId: editUser.id, email: eEmail.trim() || undefined, password: ePass || undefined } });
+      toast.success("Usuario actualizado");
+      setEditUser(null); setEPass("");
+      invalidate();
+    } catch (e: any) { toast.error(e.message); }
+    finally { setSaving(false); }
+  }
+
+  async function toggleRole(userId: string, role: "admin" | "user", has: boolean) {
+    try {
+      await roleFn({ data: { userId, role, action: has ? "remove" : "add" } });
+      invalidate();
+    } catch (e: any) { toast.error(e.message); }
+  }
+
+  async function handleDelete(userId: string, email: string) {
+    if (!confirm(`¿Eliminar al usuario ${email}? Esta acción no se puede deshacer.`)) return;
+    try {
+      await delFn({ data: { userId } });
+      toast.success("Usuario eliminado");
+      invalidate();
+    } catch (e: any) { toast.error(e.message); }
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="font-bold">Usuarios del sistema</h3>
+          <p className="text-sm text-muted-foreground">Crea usuarios, cambia contraseñas y asigna roles.</p>
+        </div>
+        <Button onClick={() => setCreateOpen(true)} className="bg-brand-gradient text-primary-foreground font-bold">
+          <UserPlus className="w-4 h-4" /> Nuevo usuario
+        </Button>
+      </div>
+
+      {usersQ.isLoading ? (
+        <div className="flex justify-center py-8"><Loader2 className="w-5 h-5 animate-spin text-primary" /></div>
+      ) : usersQ.error ? (
+        <p className="text-sm text-destructive">Error: {(usersQ.error as Error).message}</p>
+      ) : (
+        <div className="space-y-2">
+          {(usersQ.data ?? []).map((u) => {
+            const isAdmin = u.roles.includes("admin");
+            return (
+              <div key={u.id} className="bg-card border border-border rounded-xl p-4 flex flex-wrap items-center gap-3">
+                <div className="flex-1 min-w-[200px]">
+                  <div className="flex items-center gap-2">
+                    <p className="font-semibold">{u.email}</p>
+                    {isAdmin && <Badge className="bg-primary text-primary-foreground">admin</Badge>}
+                    {!isAdmin && <Badge variant="secondary">user</Badge>}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Creado: {new Date(u.created_at).toLocaleDateString()}
+                    {u.last_sign_in_at && ` · Último acceso: ${new Date(u.last_sign_in_at).toLocaleDateString()}`}
+                  </p>
+                </div>
+                <div className="flex gap-2 flex-wrap">
+                  <Button size="sm" variant="secondary" onClick={() => toggleRole(u.id, "admin", isAdmin)}>
+                    {isAdmin ? <><ShieldOff className="w-4 h-4" /> Quitar admin</> : <><Shield className="w-4 h-4" /> Hacer admin</>}
+                  </Button>
+                  <Button size="sm" variant="secondary" onClick={() => { setEditUser({ id: u.id, email: u.email }); setEEmail(u.email); setEPass(""); }}>
+                    <KeyRound className="w-4 h-4" /> Editar
+                  </Button>
+                  <Button size="sm" variant="destructive" onClick={() => handleDelete(u.id, u.email)}>
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
+            );
+          })}
+          {(usersQ.data ?? []).length === 0 && (
+            <p className="text-sm text-muted-foreground text-center py-6">Sin usuarios.</p>
+          )}
+        </div>
+      )}
+
+      <Dialog open={createOpen} onOpenChange={setCreateOpen}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Nuevo usuario</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <div>
+              <Label>Correo</Label>
+              <Input type="email" value={nEmail} onChange={(e) => setNEmail(e.target.value)} />
+            </div>
+            <div>
+              <Label>Contraseña</Label>
+              <Input type="password" value={nPass} onChange={(e) => setNPass(e.target.value)} minLength={8} />
+              <p className="text-xs text-muted-foreground mt-1">Mínimo 8 caracteres.</p>
+            </div>
+            <div>
+              <Label>Rol</Label>
+              <Select value={nRole} onValueChange={(v) => setNRole(v as "admin" | "user")}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="user">Usuario</SelectItem>
+                  <SelectItem value="admin">Administrador</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="secondary" onClick={() => setCreateOpen(false)}>Cancelar</Button>
+            <Button onClick={handleCreate} disabled={creating} className="bg-brand-gradient text-primary-foreground font-bold">
+              {creating && <Loader2 className="w-4 h-4 animate-spin" />} Crear
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!editUser} onOpenChange={(v) => !v && setEditUser(null)}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Editar usuario</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <div>
+              <Label>Correo</Label>
+              <Input type="email" value={eEmail} onChange={(e) => setEEmail(e.target.value)} />
+            </div>
+            <div>
+              <Label>Nueva contraseña (opcional)</Label>
+              <Input type="password" value={ePass} onChange={(e) => setEPass(e.target.value)} placeholder="Dejar vacío para no cambiar" />
+              <p className="text-xs text-muted-foreground mt-1">Mínimo 8 caracteres si se cambia.</p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="secondary" onClick={() => setEditUser(null)}>Cancelar</Button>
+            <Button onClick={handleSaveEdit} disabled={saving} className="bg-brand-gradient text-primary-foreground font-bold">
+              {saving && <Loader2 className="w-4 h-4 animate-spin" />} Guardar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
