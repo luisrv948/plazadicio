@@ -1,7 +1,16 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
-import { LogOut, Plus, Pencil, Trash2, Loader2, ExternalLink, Upload } from "lucide-react";
+import { LogOut, Plus, Pencil, Trash2, Loader2, ExternalLink, Upload, Shield, ShieldOff, UserPlus, KeyRound } from "lucide-react";
+
+import {
+  listUsers,
+  createUser,
+  updateUserCredentials,
+  setUserRole,
+  deleteUser,
+} from "@/lib/users.functions";
 
 import { supabase } from "@/integrations/supabase/client";
 import { useAdmin } from "@/hooks/use-admin";
@@ -74,17 +83,19 @@ function AdminPage() {
 
       <main className="max-w-6xl mx-auto px-4 py-6">
         <Tabs defaultValue="orders" className="space-y-4">
-          <TabsList className="w-full grid grid-cols-5">
+          <TabsList className="w-full grid grid-cols-6">
             <TabsTrigger value="orders">Pedidos</TabsTrigger>
             <TabsTrigger value="products">Productos</TabsTrigger>
             <TabsTrigger value="categories">Categorías</TabsTrigger>
             <TabsTrigger value="settings">Ajustes</TabsTrigger>
+            <TabsTrigger value="users">Usuarios</TabsTrigger>
             <TabsTrigger value="account">Cuenta</TabsTrigger>
           </TabsList>
           <TabsContent value="orders"><OrdersTab /></TabsContent>
           <TabsContent value="products"><ProductsTab /></TabsContent>
           <TabsContent value="categories"><CategoriesTab /></TabsContent>
           <TabsContent value="settings"><SettingsTab /></TabsContent>
+          <TabsContent value="users"><UsersTab /></TabsContent>
           <TabsContent value="account"><AccountTab email={email} /></TabsContent>
         </Tabs>
       </main>
