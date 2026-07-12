@@ -42,7 +42,7 @@ export const listUsers = createServerFn({ method: "GET" })
 const createSchema = z.object({
   email: z.string().trim().email().max(255),
   password: z.string().min(8).max(128),
-  role: z.enum(["admin", "moderator", "user"]),
+  role: z.enum(["admin", "user"]),
 });
 
 export const createUser = createServerFn({ method: "POST" })
@@ -88,7 +88,7 @@ export const updateUserCredentials = createServerFn({ method: "POST" })
 
 const roleSchema = z.object({
   userId: z.string().uuid(),
-  role: z.enum(["admin", "moderator", "user"]),
+  role: z.enum(["admin", "user"]),
   action: z.enum(["add", "remove"]),
 });
 
